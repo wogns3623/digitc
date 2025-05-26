@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.7.0 <0.9.0;
+pragma solidity >=0.8.0 <0.9.0;
 
 contract Vault {
     uint256 private _id = 0;
@@ -10,19 +10,6 @@ contract Vault {
         Encrypted,
         RequestDecrypt,
         Decrypted
-    }
-
-    struct Participant {
-        address addr;
-        /**
-         * @dev 각 참여자의 공개키
-         */
-        string publicKey;
-        /**
-         * @dev 암호화된 복호화 키
-         */
-        string encryptedKey;
-        uint decryptedAt;
     }
 
     struct Capsule {
@@ -48,16 +35,38 @@ contract Vault {
          * @dev 캡슐 데이터 복호화에 사용되는 키
          */
         string decryptionKey;
+    }
+
+    struct Participant {
+        address addr;
+        /**
+         * @dev 각 참여자의 공개키
+         */
+        string publicKey;
+        /**
+         * @dev 암호화된 복호화 키
+         */
+        string encryptedKey;
+        uint decryptedAt;
+    }
+    struct Participants {
         // encryptionKey for each participant
-        Participant[] participants;
-        mapping(address => bool) participantMap;
+        Participant[] list;
+        mapping(address => bool) map;
     }
 
     mapping(uint256 => Capsule) capsules;
+    mapping(uint256 => Participants) capsuleParticipants;
 
-    // function get(uint256 id) public view returns (Capsule memory) {
-    //     return capsules[id];
-    // }
+    function getCapsule(uint256 id) external view returns (Capsule memory) {
+        return capsules[id];
+    }
+
+    function getParticipants(
+        uint256 id
+    ) external view returns (Participant[] memory) {
+        return capsuleParticipants[id].list;
+    }
 
     // not encrypted yet
     function register(uint releasedAt) public payable returns (uint256) {
@@ -78,17 +87,15 @@ contract Vault {
 
     function participate(uint256 id, string memory publicKey) public {
         Capsule storage capsule = capsules[id];
+        Participants storage participants = capsuleParticipants[id];
         require(
             capsule.status == CapsuleStatus.Registered,
             "Capsule is not registered"
         );
-        require(
-            capsule.participantMap[msg.sender] == false,
-            "Already participated"
-        );
+        require(participants.map[msg.sender] == false, "Already participated");
 
-        capsule.participants.push(Participant(msg.sender, publicKey, "", 0));
-        capsule.participantMap[msg.sender] = true;
+        participants.list.push(Participant(msg.sender, publicKey, "", 0));
+        participants.map[msg.sender] = true;
         emit Participated(id, msg.sender, publicKey);
     }
 
@@ -104,6 +111,7 @@ contract Vault {
         string[] memory encryptedKeys
     ) public {
         Capsule storage capsule = capsules[id];
+        Participants storage participants = capsuleParticipants[id];
         require(
             capsule.status == CapsuleStatus.Registered,
             "Capsule is not registered"
@@ -112,17 +120,17 @@ contract Vault {
             msg.sender == capsule.owner,
             "Only the owner can encrypt the capsule"
         );
-        require(capsule.participants.length > 0, "No participants to encrypt");
+        require(participants.list.length > 0, "No participants to encrypt");
         require(
-            capsule.participants.length == encryptedKeys.length,
+            participants.list.length == encryptedKeys.length,
             "Invalid encrypted keys length"
         );
 
         capsule.status = CapsuleStatus.Encrypted;
         capsule.encryptionKey = encryptionKey;
 
-        for (uint256 i = 0; i < capsule.participants.length; i++) {
-            Participant storage participant = capsule.participants[i];
+        for (uint256 i = 0; i < participants.list.length; i++) {
+            Participant storage participant = participants.list[i];
             participant.encryptedKey = encryptedKeys[i];
         }
 
@@ -133,6 +141,7 @@ contract Vault {
 
     function requestDecrypt(uint256 id) public {
         Capsule storage capsule = capsules[id];
+        Participants storage participants = capsuleParticipants[id];
         require(
             capsule.status == CapsuleStatus.Encrypted,
             "Capsule is not encrypted"
@@ -146,8 +155,8 @@ contract Vault {
             "Can only request decryption after release date"
         );
 
-        for (uint256 i = 0; i < capsule.participants.length; i++) {
-            Participant storage participant = capsule.participants[i];
+        for (uint256 i = 0; i < participants.list.length; i++) {
+            Participant storage participant = participants.list[i];
             emit RequestDecrypt(id, participant.addr, participant.encryptedKey);
         }
     }
@@ -156,17 +165,18 @@ contract Vault {
 
     function decrypt(uint256 id, string memory decryptionKey) public {
         Capsule storage capsule = capsules[id];
+        Participants storage participants = capsuleParticipants[id];
         require(
             capsule.status == CapsuleStatus.RequestDecrypt,
             "Capsule is not encrypted yet"
         );
         require(
-            capsule.participantMap[msg.sender] == true,
+            participants.map[msg.sender] == true,
             "Only participants can decrypt the capsule"
         );
 
-        for (uint256 i = 0; i < capsule.participants.length; i++) {
-            Participant storage participant = capsule.participants[i];
+        for (uint256 i = 0; i < participants.list.length; i++) {
+            Participant storage participant = participants.list[i];
             if (msg.sender != participant.addr) continue;
 
             participant.decryptedAt = block.timestamp;
