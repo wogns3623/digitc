@@ -1,15 +1,16 @@
+// 타임캡슐 데이터를 암호화할 keypair 발급 api
 import { NextRequest, NextResponse } from "next/server";
 
 import { getContract } from "viem";
 
-import { wagmiContract } from "@/utils/chain/contracts";
-import { getPublicClient } from "@/utils/chain";
+import { getPublicClient } from "@/lib/blockchain";
+import { Vault } from "@/lib/blockchain/contracts";
 import {
   exportPrivateKey,
   exportPublicKey,
   generateKeyPair,
   importPublicKey,
-} from "@/utils/crypto";
+} from "@/lib/crypto";
 
 export async function POST(
   req: NextRequest,
@@ -21,9 +22,9 @@ export async function POST(
 
   // 1. Create contract instance
   const contract = getContract({
-    address: wagmiContract.address,
-    abi: wagmiContract.abi,
-    client: await getPublicClient(),
+    address: Vault.address,
+    abi: Vault.abi,
+    client: getPublicClient(),
   });
 
   const capsule = await contract.read.getCapsule([id]);

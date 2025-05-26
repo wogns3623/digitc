@@ -1,12 +1,14 @@
 {
   "name": "digitc",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
   "author": "",
-  "license": "ISC"
+  "description": "digital time capsule built on blockchain",
+  "keywords": [],
+  "scripts": {
+    "dev": "turbo dev"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.3"
+  },
+  "packageManager": "pnpm@9.15.3"
 }

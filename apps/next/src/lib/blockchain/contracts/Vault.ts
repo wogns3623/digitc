@@ -1,7 +1,7 @@
-import { Abi } from "viem";
+import { Abi, Hex } from "viem";
 
-export const wagmiContract = {
-  address: process.env.CONTRACT_ADDRESS as `0x${string}`,
+export const Vault = {
+  address: process.env.CONTRACT_ADDRESS as Hex,
   abi: [
     {
       anonymous: false,
@@ -294,6 +294,6 @@ export const wagmiContract = {
     },
   ] as const,
 } satisfies {
-  address: `0x${string}`;
+  address: Hex;
   abi: Abi;
 };
