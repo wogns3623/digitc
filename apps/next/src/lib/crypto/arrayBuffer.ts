@@ -1,4 +1,7 @@
+import { Buffer } from "buffer";
 import { bytesToString, stringToBytes } from "viem";
+
+globalThis.Buffer = Buffer;
 
 function ab2str(buf: ArrayBuffer) {
   return bytesToString(new Uint8Array(buf));

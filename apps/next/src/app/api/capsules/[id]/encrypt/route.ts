@@ -1,51 +1,63 @@
 // 타임캡슐 데이터를 암호화할 keypair 발급 api
 import { NextRequest, NextResponse } from "next/server";
-
-import { getContract } from "viem";
+import { hexToBytes, getContract, bytesToHex } from "viem";
 
 import { getPublicClient } from "@/lib/blockchain";
 import { Vault } from "@/lib/blockchain/contracts";
-import {
-  exportPrivateKey,
-  exportPublicKey,
-  generateKeyPair,
-  importPublicKey,
-} from "@/lib/crypto";
+import { EccKey, SymmetricKey } from "@/lib/crypto";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const id = await params.then((p) => BigInt(p.id));
 
-  const masterKeypair = await generateKeyPair();
-
-  // 1. Create contract instance
   const contract = getContract({
     address: Vault.address,
     abi: Vault.abi,
     client: getPublicClient(),
   });
 
-  const capsule = await contract.read.getCapsule([id]);
-  capsule.encryptionKey = await exportPublicKey(masterKeypair.publicKey);
+  const [capsule, participants] = await Promise.all([
+    contract.read.getCapsule([id]),
+    contract.read.getParticipants([id]),
+  ]);
+  const iv = hexToBytes(capsule.iv);
 
-  const participants = await contract.read.getParticipants([id]);
+  const masterKey = await SymmetricKey.generate();
+  const exportedMasterKey = await masterKey.export();
+  const ownerKey = await EccKey.generate();
 
-  for (const participant of participants) {
-    const participantPublicKey = await importPublicKey(participant.publicKey);
+  const encryptedKeys = await Promise.all(
+    participants.map(async (participant) => {
+      const participantKey = new EccKey({
+        publicKey: hexToBytes(participant.publicKey),
+      });
 
-    participant.encryptedKey = await exportPrivateKey(
-      masterKeypair.privateKey,
-      participantPublicKey
-    );
-  }
+      const participantSecretKey = await ownerKey.deriveKey(participantKey);
 
-  return new NextResponse(
-    JSON.stringify({
-      capsule,
-      participants,
+      // TODO: using .wrapKey() instead of .encrypt()
+      const participantEncryptedKey = await participantSecretKey.encrypt(
+        exportedMasterKey,
+        iv,
+      );
+
+      return bytesToHex(participantEncryptedKey);
     }),
-    { status: 200, headers: { "Content-Type": "application/json" } }
   );
+
+  // TODO: Streaming
+  const blob = await req.blob();
+  const data = await blob.arrayBuffer();
+  const encryptedData = await masterKey.encrypt(data, iv);
+
+  const formdata = new FormData();
+  formdata.append("publicKey", bytesToHex(ownerKey.export.publicKey));
+  encryptedKeys.forEach((encryptedKey) =>
+    formdata.append("encryptedKeys", encryptedKey),
+  );
+
+  formdata.append("file", new Blob([encryptedData]), "capsule.dat");
+
+  return new NextResponse(formdata, { status: 200 });
 }

@@ -1,15 +1,14 @@
-import { getWalletClient } from "@/lib/blockchain";
 import { redirect } from "next/navigation";
-import { useState } from "react";
-import { WalletClient } from "viem";
+
+import { AccountProvider, useContractContext } from "@/lib/blockchain/react";
 
 export default function AuthenticatedLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  //   const [walletClient] = useState<WalletClient>(() => getWalletClient());
-  //   if (!walletClient.account) redirect("/");
+}: Readonly<{ children: React.ReactNode }>) {
+  const { walletClient } = useContractContext();
+  if (!walletClient.account) redirect("/");
 
-  return <>{children}</>;
+  return (
+    <AccountProvider account={walletClient.account}>{children}</AccountProvider>
+  );
 }
