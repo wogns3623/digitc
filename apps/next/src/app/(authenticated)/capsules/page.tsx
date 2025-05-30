@@ -26,7 +26,7 @@ const formSchema = z.object({
     .string()
     .datetime({ local: true, message: "유효한 날짜를 입력해주세요." })
     .transform(dayjs)
-    .refine((date) => date.isAfter(dayjs()), {
+    .refine((date) => dayjs().isBefore(date, "day"), {
       message: "개봉일은 현재 시간 이후여야 합니다.",
     })
     .transform((date) => BigInt(date.unix())),
@@ -34,7 +34,7 @@ const formSchema = z.object({
 
 export default function CapsuleHomePage() {
   const {
-    walletClient,
+    client,
     contracts: { vault },
   } = useContractContext();
   const account = useAccount();
@@ -57,7 +57,7 @@ export default function CapsuleHomePage() {
         [title, releasedAt, iv],
         { account: account.address, value: fee },
       );
-      const hash = await walletClient.writeContract(request);
+      const hash = await client.writeContract(request);
       console.log("Transaction result:", result, hash);
 
       toast({ description: "타임캡슐이 등록되었습니다." });
@@ -83,11 +83,11 @@ export default function CapsuleHomePage() {
         </p>
 
         <p className="text-secondary-content text-sm">
-          address: <span>{walletClient.account?.address}</span>
+          address: <span>{account.address}</span>
         </p>
 
         <p className="text-secondary-content text-sm">
-          현재 잔액: {balance ? `${balance} wei` : "로딩 중..."}
+          현재 잔액: {balance.data ? `${balance.data} wei` : "로딩 중..."}
         </p>
       </div>
 
@@ -144,7 +144,7 @@ export default function CapsuleHomePage() {
         </Link>
 
         <Link className="btn" href="/capsules/available">
-          내 타임캡슐 보기
+          타임캡슐에 참여하기
         </Link>
       </div>
     </section>

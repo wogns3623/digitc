@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
-import { Hex, hexToBool, hexToBytes } from "viem";
+import { hexToBool, hexToBytes } from "viem";
 import { z } from "zod";
 
 import { Form, FormField } from "@/components/ui/form";
@@ -15,7 +15,7 @@ const fileFormSchema = z.object({ file: z.instanceof(File) });
 
 export function OpenCapsuleFooter({ capsule }: { capsule: Vault.Capsule }) {
   const {
-    walletClient,
+    client,
     contracts: { vault },
   } = useContractContext();
   const account = useAccount();
@@ -33,7 +33,7 @@ export function OpenCapsuleFooter({ capsule }: { capsule: Vault.Capsule }) {
       const { result, request } = await vault.simulate.approve([capsule.id], {
         account: account.address,
       });
-      const hash = await walletClient.writeContract(request);
+      const hash = await client.writeContract(request);
 
       return { result, hash };
     },

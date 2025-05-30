@@ -9,7 +9,7 @@ import { downloadFileViaBlob } from "@/lib/file";
 
 export function ParticipateFooter({ capsule }: { capsule: Vault.Capsule }) {
   const {
-    walletClient,
+    client,
     contracts: { vault },
   } = useContractContext();
   const account = useAccount();
@@ -21,7 +21,7 @@ export function ParticipateFooter({ capsule }: { capsule: Vault.Capsule }) {
         [capsule.id, publicKeyHex],
         { account: account.address },
       );
-      const hash = await walletClient.writeContract(request);
+      const hash = await client.writeContract(request);
 
       return { result, hash };
     },
@@ -53,7 +53,7 @@ export function ParticipateFooter({ capsule }: { capsule: Vault.Capsule }) {
   };
 
   return (
-    <button className="btn btn-primary" onClick={onParticipate}>
+    <button className="btn btn-primary w-full" onClick={onParticipate}>
       참여하기
     </button>
   );

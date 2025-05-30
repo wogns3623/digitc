@@ -213,7 +213,7 @@ export class EccKey<T extends EccKeyPair = EccKeyPair> {
   static async generate() {
     const keypair = await crypto.subtle.generateKey(
       { name: "ECDH", namedCurve: "P-384" },
-      false,
+      true,
       ["deriveKey"],
     );
 

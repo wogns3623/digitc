@@ -18,7 +18,7 @@ export function SubmitPrivateKeyFooter({
   capsule: Vault.Capsule;
 }) {
   const {
-    walletClient,
+    client,
     contracts: { vault },
   } = useContractContext();
   const account = useAccount();
@@ -30,7 +30,7 @@ export function SubmitPrivateKeyFooter({
         [capsule.id, privateKey],
         { account: account.address },
       );
-      const hash = await walletClient.writeContract(request);
+      const hash = await client.writeContract(request);
 
       return { result, hash };
     },

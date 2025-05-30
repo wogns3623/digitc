@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hexToBytes, getContract, bytesToHex } from "viem";
 
-import { getPublicClient } from "@/lib/blockchain";
+import { getClient } from "@/lib/blockchain";
 import { Vault } from "@/lib/blockchain/contracts";
 import { EccKey, SymmetricKey } from "@/lib/crypto";
 
@@ -15,7 +15,7 @@ export async function POST(
   const contract = getContract({
     address: Vault.address,
     abi: Vault.abi,
-    client: getPublicClient(),
+    client: getClient(),
   });
 
   const [capsule, participants] = await Promise.all([

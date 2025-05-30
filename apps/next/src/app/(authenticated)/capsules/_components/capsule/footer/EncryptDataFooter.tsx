@@ -14,7 +14,7 @@ const fileFormSchema = z.object({ file: z.instanceof(File) });
 
 export function EncryptDataFooter({ capsule }: { capsule: Vault.Capsule }) {
   const {
-    walletClient,
+    client,
     contracts: { vault },
   } = useContractContext();
   const account = useAccount();
@@ -32,7 +32,7 @@ export function EncryptDataFooter({ capsule }: { capsule: Vault.Capsule }) {
         [capsule.id, publicKey, encryptedKeys],
         { account: account.address },
       );
-      const hash = await walletClient.writeContract(request);
+      const hash = await client.writeContract(request);
 
       return { result, hash };
     },

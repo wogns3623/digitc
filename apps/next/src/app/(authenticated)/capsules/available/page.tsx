@@ -8,14 +8,12 @@ import { CapsuleCard } from "../_components/capsule";
 
 export default function AvailableCapsulesPage() {
   const {
-    walletClient,
     contracts: { vault },
   } = useContractContext();
 
-  const availableCapsules = useQuery({
+  const capsules = useQuery({
     queryKey: ["availableCapsules"],
     queryFn: async () => {
-      if (!walletClient.account) return [];
       const [capsules, participated] = await vault.read.getAvailableCapsules();
       return capsules.map((capsule, i) => ({
         capsule,
@@ -27,20 +25,20 @@ export default function AvailableCapsulesPage() {
   });
 
   return (
-    <div className="flex h-screen w-full flex-col p-8">
+    <div className="flex h-screen w-full flex-col items-center p-8">
       <h1 className="mb-4 text-2xl font-bold">타임캡슐에 참여하기</h1>
 
-      {availableCapsules.isLoading ? (
+      {capsules.isLoading ? (
         <div className="flex h-full w-full items-center justify-center">
           <span className="loading loading-spinner loading-lg"></span>
         </div>
-      ) : !availableCapsules.data ? (
+      ) : !capsules.data || capsules.data.length === 0 ? (
         <p className="text-secondary-content">
           참여 가능한 타임캡슐이 없습니다.
         </p>
       ) : (
         <ul className="space-y-2">
-          {availableCapsules.data.map(({ capsule, participated }) => (
+          {capsules.data.map(({ capsule, participated }) => (
             <CapsuleCard
               capsule={capsule}
               participated={participated}
