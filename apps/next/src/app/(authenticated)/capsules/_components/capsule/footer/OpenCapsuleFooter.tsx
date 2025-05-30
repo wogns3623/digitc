@@ -97,13 +97,13 @@ export function OpenCapsuleFooter({ capsule }: { capsule: Vault.Capsule }) {
         control={form.control}
         name="file"
         className="flex-1"
-        render={({ field }) => (
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        render={({ field: { value, onChange, ...field } }) => (
           <input
             type="file"
             className="file-input w-full"
-            accept=".pem"
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            {...(field as any)}
+            {...field}
+            onChange={(e) => onChange(e.target.files?.[0])}
             disabled={
               capsule.participantCount === 0n ||
               form.formState.isSubmitting ||

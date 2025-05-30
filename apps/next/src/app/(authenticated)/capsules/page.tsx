@@ -75,27 +75,38 @@ export default function CapsuleHomePage() {
   });
 
   return (
-    <section className="flex h-screen flex-col items-center justify-center p-8">
-      <div className="space-y-4 text-center">
-        <h1 className="text-4xl font-bold">타임캡슐</h1>
-        <p className="text-secondary-content text-lg">
-          블록체인에 당신의 추억을 저장하세요.
-        </p>
+    <section className="flex h-screen flex-col items-center justify-center space-y-8 p-8">
+      <div className="flex space-x-4">
+        <section className="card card-border bg-base-300 flex flex-1 flex-col justify-center space-y-4 p-4">
+          <div className="space-y-4 text-center">
+            <h1 className="text-4xl font-bold">타임캡슐</h1>
 
-        <p className="text-secondary-content text-sm">
-          address: <span>{account.address}</span>
-        </p>
+            <p className="text-base-content/70 text-lg">
+              블록체인에 당신의 추억을 저장하세요.
+            </p>
 
-        <p className="text-secondary-content text-sm">
-          현재 잔액: {balance.data ? `${balance.data} wei` : "로딩 중..."}
-        </p>
-      </div>
+            <p className="text-base-content/70 text-sm">
+              현재 잔액: {balance.data ? `${balance.data} wei` : "로딩 중..."}
+            </p>
+          </div>
 
-      <div className="mt-8 flex flex-col space-y-4">
+          <Link className="btn" href="/capsules/mine">
+            내 타임캡슐 보기
+          </Link>
+
+          <Link className="btn" href="/capsules/available">
+            타임캡슐에 참여하기
+          </Link>
+
+          <Link className="btn" href="/capsules/participated">
+            참여한 타임캡슐 보기
+          </Link>
+        </section>
+
         <Form
           form={form}
+          className="card card-border bg-base-300 flex flex-1 flex-col space-y-4 p-4"
           onSubmit={onSubmit}
-          className="flex flex-col space-y-8"
         >
           <FormField
             control={form.control}
@@ -138,14 +149,6 @@ export default function CapsuleHomePage() {
             새 타임캡슐 만들기
           </button>
         </Form>
-
-        <Link className="btn" href="/capsules/mine">
-          내 타임캡슐 보기
-        </Link>
-
-        <Link className="btn" href="/capsules/available">
-          타임캡슐에 참여하기
-        </Link>
       </div>
     </section>
   );

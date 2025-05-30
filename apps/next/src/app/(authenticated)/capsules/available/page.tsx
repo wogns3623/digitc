@@ -33,9 +33,7 @@ export default function AvailableCapsulesPage() {
           <span className="loading loading-spinner loading-lg"></span>
         </div>
       ) : !capsules.data || capsules.data.length === 0 ? (
-        <p className="text-secondary-content">
-          참여 가능한 타임캡슐이 없습니다.
-        </p>
+        <p className="text-base-content/70">참여 가능한 타임캡슐이 없습니다.</p>
       ) : (
         <ul className="space-y-2">
           {capsules.data.map(({ capsule, participated }) => (

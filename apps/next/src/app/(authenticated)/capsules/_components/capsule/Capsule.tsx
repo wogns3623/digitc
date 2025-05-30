@@ -24,7 +24,7 @@ export function CapsuleCard({
       <div className="card-body space-y-2">
         <section className="card-title flex items-center justify-between space-x-8">
           <span className="flex items-center space-x-2">
-            <span className="text-secondary-content">No. {capsule.id}</span>
+            <span className="text-base-content/70">No. {capsule.id}</span>
             <div
               className={cn("badge badge-sm badge-soft", {
                 "badge-primary":
@@ -62,7 +62,7 @@ export function CapsuleCard({
 
         <h2 className="text-4xl">{capsule.title}</h2>
 
-        <section className="text-secondary-content space-y-2 text-sm">
+        <section className="text-base-content/70 space-y-2 text-sm">
           <p>수수료: {capsule.fee} WEI</p>
           <p>참여자: {capsule.participantCount}명</p>
           <p>개봉일: {releasedAt.format("YYYY-MM-DD HH:mm:ss")}</p>
