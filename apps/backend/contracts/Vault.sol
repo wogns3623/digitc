@@ -43,7 +43,7 @@ contract Vault {
          */
         bytes iv;
         /**
-         * @dev 캡슐 소유자의 ecdh 공개키
+         * @dev 캡슐 소유자의 ECDH 공개키
          */
         bytes publicKey;
         /**
@@ -239,23 +239,25 @@ contract Vault {
         // TODO: 참여자의 복호화 키가 잘못되었을때를 대비해야 함
         participant.privateKey = privateKey;
 
-        (bytes memory decryptedKey, bool valid) = decryptKey(
-            participant.privateKey,
-            participant.encryptedKey
-        );
-        if (!valid) revert("Invalid private key");
+        // bool isValid = verify(participant.publicKey, secretKey);
 
-        capsule.decryptedKey = decryptedKey;
-        participant.isApproved = true;
-        emit Decrypted(id, capsule.decryptedKey);
+        // (bytes memory decryptedKey, bool valid) = decryptKey(
+        //     participant.privateKey,
+        //     participant.encryptedKey
+        // );
+        // if (!valid) revert("Invalid private key");
+
+        // capsule.decryptedKey = decryptedKey;
+        // participant.isApproved = true;
+        // emit Decrypted(id, capsule.decryptedKey);
     }
 
-    function decryptKey(
-        bytes memory privateKey,
-        bytes memory encryptedKey
-    ) internal pure returns (bytes memory, bool) {
-        return ("", true);
-    }
+    // function decryptKey(
+    //     bytes memory privateKey,
+    //     bytes memory encryptedKey
+    // ) internal pure returns (bytes memory, bool) {
+    //     return ("", true);
+    // }
 
     function approve(uint id) public payable {
         Capsule storage capsule = capsules[id];

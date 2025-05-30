@@ -1,3 +1,5 @@
+"use client";
+
 import { redirect } from "next/navigation";
 
 import { AccountProvider, useContractContext } from "@/lib/blockchain/react";

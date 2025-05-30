@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import dayjs from "dayjs";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
-import { bytesToHex, ContractFunctionExecutionError } from "viem";
+import { bytesToHex } from "viem";
 import { z } from "zod";
 
 import { Form, FormField } from "@/components/ui/form";
@@ -63,11 +63,13 @@ export default function CapsuleHomePage() {
       toast({ description: "타임캡슐이 등록되었습니다." });
     } catch (error) {
       console.log("Error registering capsule:", error);
-      let reason = "알 수 없는 오류가 발생했습니다.";
-      if (error instanceof ContractFunctionExecutionError) {
+      const reason =
         // @ts-expect-error solidity error
-        reason = error.cause?.reason;
-      }
+        error?.cause?.reason ??
+        // @ts-expect-error solidity error
+        error?.message ??
+        "알 수 없는 오류가 발생했습니다.";
+
       toast({ description: `타임캡슐 등록에 실패했습니다: ${reason}` });
     }
   });
