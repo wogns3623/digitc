@@ -23,11 +23,19 @@ export function CapsuleFooter({
     dayjs.unix(Number(capsule.releasedAt)).diff(dayjs(), "seconds") <= 0;
   const alreadySubmitted = participant && BigInt(participant.privateKey) > 0n;
 
+  console.log({
+    isOwner,
+    isParticipant,
+    isReleased,
+    alreadySubmitted,
+    capsuleStatus: capsule.status,
+  });
+
   if (capsule.status === Vault.CapsuleStatus.Registered) {
     if (isOwner) return <EncryptDataFooter capsule={capsule} />;
     else if (!isParticipant) return <ParticipateFooter capsule={capsule} />;
   } else if (capsule.status === Vault.CapsuleStatus.Encrypted) {
-    if (isParticipant && !isReleased)
+    if (isParticipant && isReleased)
       return <SubmitPrivateKeyFooter capsule={capsule} />;
   } else if (capsule.status === Vault.CapsuleStatus.Decrypted) {
     if (isParticipant && !alreadySubmitted)

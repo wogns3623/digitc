@@ -1,5 +1,5 @@
 import { bytesToHex } from "viem";
-import { useWriteContract } from "wagmi";
+import { useSimulateContract, useWriteContract } from "wagmi";
 
 import { toast } from "@/components/ui/toast";
 import { contracts } from "@/lib/blockchain";
@@ -16,11 +16,12 @@ export function ParticipateFooter({ capsule }: { capsule: Vault.Capsule }) {
     await writeContractAsync(
       {
         ...contracts.Vault,
-        functionName: "decrypt",
+        functionName: "participate",
         args: [capsule.id, bytesToHex(participantKey.exportPublicKey())],
       },
       {
         onError(error) {
+          console.log(error);
           toast({
             title: "타임캡슐에 참여하지 못했습니다",
             // @ts-expect-error solidity error

@@ -3,10 +3,12 @@
 import { useReadContract } from "wagmi";
 
 import { contracts } from "@/lib/blockchain";
+import { useAssertedAccount } from "@/lib/blockchain/react";
 
 import { CapsuleList } from "../_components/capsule";
 
 export default function ParticipatedCapsulesPage() {
+  const { address } = useAssertedAccount();
   const capsules = useReadContract({
     ...contracts.Vault,
     functionName: "getParticipatedCapsules",
@@ -20,6 +22,7 @@ export default function ParticipatedCapsulesPage() {
         }));
       },
     },
+    account: address,
   });
 
   return (

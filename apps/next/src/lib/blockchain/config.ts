@@ -9,5 +9,6 @@ declare module "wagmi" {
 
 export const config = createConfig({
   chains: process.env.NODE_ENV !== "production" ? [hardhat] : [mainnet],
+  ssr: true,
   transports: { [mainnet.id]: http(), [hardhat.id]: http() },
 });

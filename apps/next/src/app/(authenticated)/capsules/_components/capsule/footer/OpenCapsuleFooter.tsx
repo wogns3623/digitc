@@ -8,6 +8,7 @@ import { Form, FormField } from "@/components/ui/form";
 import { toast } from "@/components/ui/toast";
 import { contracts } from "@/lib/blockchain";
 import { Vault } from "@/lib/blockchain/contracts";
+import { useAssertedAccount } from "@/lib/blockchain/react";
 import { EccKey, SymmetricKey } from "@/lib/crypto";
 import { downloadFileViaBlob } from "@/lib/file";
 
@@ -16,15 +17,18 @@ const fileFormSchema = z.object({ file: z.instanceof(File) });
 export function OpenCapsuleFooter({ capsule }: { capsule: Vault.Capsule }) {
   const form = useForm({ resolver: zodResolver(fileFormSchema) });
 
+  const { address } = useAssertedAccount();
   const { writeContractAsync } = useWriteContract();
   const participants = useReadContract({
     ...contracts.Vault,
     functionName: "getParticipants",
+    args: [capsule.id],
     query: {
       enabled: form.formState.touchedFields.file,
       refetchOnWindowFocus: false,
       staleTime: 1000 * 60 * 5, // 5 minutes
     },
+    account: address,
   });
 
   const onSubmit = form.handleSubmit(async (values) => {

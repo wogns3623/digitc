@@ -3,10 +3,12 @@
 import { useReadContract } from "wagmi";
 
 import { contracts } from "@/lib/blockchain";
+import { useAssertedAccount } from "@/lib/blockchain/react";
 
 import { CapsuleList } from "../_components/capsule";
 
 export default function MyCapsulesPage() {
+  const { address } = useAssertedAccount();
   const capsules = useReadContract({
     ...contracts.Vault,
     functionName: "getMyCapsules",
@@ -14,6 +16,7 @@ export default function MyCapsulesPage() {
       refetchOnWindowFocus: false,
       staleTime: 1000 * 60 * 5, // 5 minutes
     },
+    account: address,
   });
 
   return (

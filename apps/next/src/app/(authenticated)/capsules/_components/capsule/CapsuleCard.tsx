@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 
 import { CapsuleFooter } from "./footer/CapsuleFooter";
 
+const ETH = 10n ** 18n; // 1 ETH in wei
 export function CapsuleCard({
   capsule,
   participant,
@@ -16,8 +17,6 @@ export function CapsuleCard({
   participant?: Vault.Participant;
 }) {
   const releasedAt = dayjs.unix(Number(capsule.releasedAt));
-  const { isNegative, days, hours, minutes, seconds } =
-    useCapsuleCountdown(releasedAt);
 
   return (
     <li className="card card-border bg-base-300 min-w-lg shadow-xl">
@@ -40,30 +39,13 @@ export function CapsuleCard({
             </div>
           </span>
 
-          <span className="font-mono text-2xl">
-            {isNegative ? "-" : ""}
-            {days > 0 && <span>{String(days).padStart(3, "0")}d</span>}
-            <span className="countdown">
-              <span style={{ "--value": hours } as React.CSSProperties}>
-                {hours}
-              </span>
-              h
-              <span style={{ "--value": minutes } as React.CSSProperties}>
-                {minutes}
-              </span>
-              m
-              <span style={{ "--value": seconds } as React.CSSProperties}>
-                {seconds}
-              </span>
-              s
-            </span>
-          </span>
+          <CapsuleCountdown releasedAt={releasedAt} />
         </section>
 
         <h2 className="text-4xl">{capsule.title}</h2>
 
         <section className="text-base-content/70 space-y-2 text-sm">
-          <p>수수료: {capsule.fee} WEI</p>
+          <p>수수료: {capsule.fee / ETH} ETH</p>
           <p>참여자: {capsule.participantCount}명</p>
           <p>개봉일: {releasedAt.format("YYYY-MM-DD HH:mm:ss")}</p>
         </section>
@@ -75,6 +57,31 @@ export function CapsuleCard({
     </li>
   );
 }
+
+function CapsuleCountdown({ releasedAt }: { releasedAt: dayjs.Dayjs }) {
+  const { isNegative, days, hours, minutes, seconds } =
+    useCapsuleCountdown(releasedAt);
+
+  return (
+    <span className="font-mono text-2xl">
+      {isNegative ? "-" : ""}
+      {days > 0 && <span>{String(days).padStart(3, "0")}d</span>}
+      <span className="countdown">
+        <span style={{ "--value": hours } as React.CSSProperties}>{hours}</span>
+        h
+        <span style={{ "--value": minutes } as React.CSSProperties}>
+          {minutes}
+        </span>
+        m
+        <span style={{ "--value": seconds } as React.CSSProperties}>
+          {seconds}
+        </span>
+        s
+      </span>
+    </span>
+  );
+}
+
 function useCapsuleCountdown(releasedAt: dayjs.Dayjs) {
   const countdown = useCountdown({
     countStart: releasedAt.diff(dayjs(), "seconds"),
