@@ -1,14 +1,26 @@
 "use client";
 
 import { redirect } from "next/navigation";
+import { useAccount } from "wagmi";
 
-import { AccountContext, useContractContext } from "@/lib/blockchain/react";
+import { AssertedAccountContext } from "@/lib/blockchain/react";
 
 export default function AuthenticatedLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const { account } = useContractContext();
-  if (!account) redirect("/");
+  const account = useAccount();
+  if (!account.isConnected) redirect("/");
 
-  return <AccountContext value={account}>{children}</AccountContext>;
+  if (account.isReconnecting) {
+    return (
+      <div>
+        <p className="text-center text-lg">Reconnecting...</p>
+        <p className="text-center text-sm">Please wait...</p>
+      </div>
+    );
+  }
+
+  return (
+    <AssertedAccountContext value={account}>{children}</AssertedAccountContext>
+  );
 }

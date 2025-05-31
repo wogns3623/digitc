@@ -1,2 +1,2 @@
 // @index(['./*', '!./index.ts', '!./*.(spec|test).ts'], f => `export * from '${f.path}';`)
-export * from "./contract.context";
+export * from "./assertedAccount.context";

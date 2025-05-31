@@ -1,9 +1,9 @@
 // 타임캡슐 데이터를 암호화할 keypair 발급 api
 import { NextRequest, NextResponse } from "next/server";
-import { hexToBytes, getContract, bytesToHex } from "viem";
+import { hexToBytes, bytesToHex } from "viem";
+import { readContracts } from "wagmi/actions";
 
-import { getClient } from "@/lib/blockchain";
-import { Vault } from "@/lib/blockchain/contracts";
+import { config, contracts } from "@/lib/blockchain";
 import { EccKey, SymmetricKey } from "@/lib/crypto";
 
 export async function POST(
@@ -12,17 +12,21 @@ export async function POST(
 ) {
   const id = await params.then((p) => BigInt(p.id));
 
-  const contract = getContract({
-    address: Vault.address,
-    abi: Vault.abi,
-    client: getClient(),
+  const [capsule, participants] = await readContracts(config, {
+    contracts: [
+      { ...contracts.Vault, functionName: "getCapsule", args: [id] },
+      { ...contracts.Vault, functionName: "getParticipants", args: [id] },
+    ],
   });
 
-  const [capsule, participants] = await Promise.all([
-    contract.read.getCapsule([id]),
-    contract.read.getParticipants([id]),
-  ]);
-  const iv = hexToBytes(capsule.iv);
+  if (capsule.status !== "success" || participants.status !== "success") {
+    return new NextResponse(
+      `Failed to retrieve capsule or participants of the capsule ${id}.`,
+      { status: 500 },
+    );
+  }
+
+  const iv = hexToBytes(capsule.result.iv);
 
   const masterKey = await SymmetricKey.generate();
   const exportedMasterKey = await masterKey.export();
@@ -30,7 +34,7 @@ export async function POST(
 
   const publicKey = bytesToHex(ownerKeypair.exportPublicKey());
   const encryptedKeys = await Promise.all(
-    participants.map(async (participant) => {
+    participants.result.map(async (participant) => {
       const participantKeypair = EccKey.fromPublicKey(
         hexToBytes(participant.publicKey),
       );

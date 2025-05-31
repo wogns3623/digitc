@@ -1,1 +1,2 @@
-export * from "./Capsule";
+export * from "./CapsuleCard";
+export * from "./CapsuleList";

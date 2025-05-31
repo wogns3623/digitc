@@ -1,6 +1,5 @@
 import type { webcrypto } from "crypto";
 import elliptic from "elliptic";
-import { bytesToHex, hexToBytes, Prettify } from "viem";
 
 export const generateIV = () => {
   return crypto.getRandomValues(new Uint8Array(12));

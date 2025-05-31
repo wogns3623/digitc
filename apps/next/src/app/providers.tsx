@@ -5,9 +5,10 @@ import {
   QueryClient,
   QueryClientProvider,
 } from "@tanstack/react-query";
+import { WagmiProvider } from "wagmi";
 
 import { Toaster } from "@/components/ui/toast";
-import { ContractProvider } from "@/lib/blockchain/react";
+import { config } from "@/lib/blockchain";
 
 function makeQueryClient() {
   return new QueryClient({
@@ -45,9 +46,11 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   const queryClient = getQueryClient();
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <ContractProvider>{children}</ContractProvider>
-      <Toaster />
-    </QueryClientProvider>
+    <WagmiProvider config={config}>
+      <QueryClientProvider client={queryClient}>
+        {children}
+        <Toaster />
+      </QueryClientProvider>
+    </WagmiProvider>
   );
 }

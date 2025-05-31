@@ -1,55 +1,53 @@
 "use client";
 
-import { useState } from "react";
-
-import { redirect } from "next/navigation";
-import { useLocalStorage } from "usehooks-ts";
-import { Hex } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
-
-import { knownAccounts } from "@/lib/blockchain";
-import { useContractContext } from "@/lib/blockchain/react";
+import Image from "next/image";
+import Link from "next/link";
+import { useAccount, useConnect } from "wagmi";
+import { useDisconnect, useEnsAvatar, useEnsName } from "wagmi";
 
 export default function HomePage() {
-  const { account, setAccount } = useContractContext();
-  const [localAccount, setLocalAccount] = useLocalStorage<{
-    privateKey: Hex;
-  } | null>("accountPrivateKey", null, { initializeWithValue: false });
+  const { isConnected } = useAccount();
 
   return (
     <div className="flex h-screen w-full items-center justify-center">
-      <section className="flex flex-col items-center space-y-4 p-8">
-        <select
-          value={localAccount ? localAccount.privateKey : "지갑 계정 선택"}
-          className="select w-full"
-          onChange={(e) => {
-            if (e.target.value === "지갑 계정 선택") return;
+      {isConnected ? <Account /> : <WalletOptions />}
+    </div>
+  );
+}
 
-            const privateKey = e.target.value as Hex;
-            const account = privateKeyToAccount(privateKey);
-            setAccount(account);
-            setLocalAccount({ privateKey });
-          }}
-        >
-          <option disabled={true}>지갑 계정 선택</option>
-          {knownAccounts.map((account) => (
-            <option key={account.publicKey} value={account.privateKey}>
-              {account.publicKey}
-            </option>
-          ))}
-        </select>
+function WalletOptions() {
+  const { connectors, connect } = useConnect();
 
-        <button
-          type="submit"
-          disabled={!localAccount}
-          className="btn btn-primary mt-4 w-full"
-          onClick={() => {
-            if (localAccount) redirect("/capsules");
-          }}
-        >
-          로그인
+  return connectors.map((connector) => (
+    <button
+      className="btn"
+      key={connector.uid}
+      onClick={() => connect({ connector })}
+    >
+      {connector.name}
+    </button>
+  ));
+}
+
+function Account() {
+  const { address } = useAccount();
+  const { disconnect } = useDisconnect();
+  const { data: ensName } = useEnsName({ address });
+  const { data: ensAvatar } = useEnsAvatar({ name: ensName! });
+
+  return (
+    <div>
+      {ensAvatar && <Image alt="ENS Avatar" src={ensAvatar} />}
+      {address && <div>{ensName ? `${ensName} (${address})` : address}</div>}
+
+      <div className="flex space-x-2">
+        <Link className="btn flex-1" href="/capsules">
+          타임캡슐 페이지로 이동
+        </Link>
+        <button className="btn flex-1" onClick={() => disconnect()}>
+          로그아웃
         </button>
-      </section>
+      </div>
     </div>
   );
 }

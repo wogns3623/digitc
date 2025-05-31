@@ -1,13 +1,13 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
-import { bytesToHex, Hex } from "viem";
+import { bytesToHex } from "viem";
+import { useWriteContract } from "wagmi";
 import { z } from "zod";
 
 import { Form, FormField } from "@/components/ui/form";
 import { toast } from "@/components/ui/toast";
+import { contracts } from "@/lib/blockchain";
 import { Vault } from "@/lib/blockchain/contracts";
-import { useAccount, useContractContext } from "@/lib/blockchain/react";
 import { unwrapPem } from "@/lib/crypto";
 
 const fileFormSchema = z.object({ file: z.instanceof(File) });
@@ -17,38 +17,7 @@ export function SubmitPrivateKeyFooter({
 }: {
   capsule: Vault.Capsule;
 }) {
-  const {
-    client,
-    contracts: { vault },
-  } = useContractContext();
-  const account = useAccount();
-
-  const submitPrivateKey = useMutation({
-    mutationKey: ["submitPrivateKey", capsule.id.toString()],
-    mutationFn: async (privateKey: Hex) => {
-      const { result, request } = await vault.simulate.decrypt(
-        [capsule.id, privateKey],
-        { account: account.address },
-      );
-      const hash = await client.writeContract(request);
-
-      return { result, hash };
-    },
-
-    onSuccess: ({ result, hash }) => {
-      console.log("Transaction result:", result, hash);
-    },
-    onError: (error) => {
-      console.log("Error submitting participant private key:", error);
-      const reason =
-        // @ts-expect-error solidity error
-        error?.cause?.reason ??
-        error.message ??
-        "알 수 없는 오류가 발생했습니다.";
-
-      toast({ description: `복호화 키 제출에 실패했습니다: ${reason}` });
-    },
-  });
+  const { writeContractAsync } = useWriteContract();
 
   const form = useForm({ resolver: zodResolver(fileFormSchema) });
 
@@ -59,7 +28,22 @@ export function SubmitPrivateKeyFooter({
       .then((b64Key) => Buffer.from(b64Key, "base64"))
       .then(bytesToHex);
 
-    await submitPrivateKey.mutateAsync(privateKey);
+    await writeContractAsync(
+      {
+        ...contracts.Vault,
+        functionName: "decrypt",
+        args: [capsule.id, privateKey],
+      },
+      {
+        onError(error) {
+          toast({
+            title: "복호화 키 제출에 실패했습니다",
+            // @ts-expect-error solidity error
+            description: error.cause?.reason ?? error.message,
+          });
+        },
+      },
+    );
 
     toast({
       description:

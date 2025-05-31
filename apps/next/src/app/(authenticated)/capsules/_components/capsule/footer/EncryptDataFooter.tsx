@@ -2,55 +2,18 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { Hex } from "viem";
+import { useWriteContract } from "wagmi";
 import { z } from "zod";
 
 import { Form, FormField } from "@/components/ui/form";
 import { toast } from "@/components/ui/toast";
+import { contracts } from "@/lib/blockchain";
 import { Vault } from "@/lib/blockchain/contracts";
-import { useAccount, useContractContext } from "@/lib/blockchain/react";
 import { downloadFileViaBlob } from "@/lib/file";
 
 const fileFormSchema = z.object({ file: z.instanceof(File) });
 
 export function EncryptDataFooter({ capsule }: { capsule: Vault.Capsule }) {
-  const {
-    client,
-    contracts: { vault },
-  } = useContractContext();
-  const account = useAccount();
-
-  const submitPublicKey = useMutation({
-    mutationKey: ["submitPublicKey", capsule.id.toString()],
-    mutationFn: async ({
-      publicKey,
-      encryptedKeys,
-    }: {
-      publicKey: Hex;
-      encryptedKeys: Hex[];
-    }) => {
-      const { result, request } = await vault.simulate.encrypt(
-        [capsule.id, publicKey, encryptedKeys],
-        { account: account.address },
-      );
-      const hash = await client.writeContract(request);
-
-      return { result, hash };
-    },
-    onSuccess: ({ result, hash }) => {
-      console.log("Transaction result:", result, hash);
-    },
-    onError: (error) => {
-      console.log("Error submitting public key:", error);
-      const reason =
-        // @ts-expect-error solidity error
-        error?.cause?.reason ??
-        error.message ??
-        "알 수 없는 오류가 발생했습니다.";
-
-      toast({ description: `타임캡슐 암호화에 실패했습니다: ${reason}` });
-    },
-  });
-
   const encryptData = useMutation({
     mutationKey: ["encryptData", capsule.id.toString()],
     mutationFn: async (file: File) => {
@@ -66,17 +29,14 @@ export function EncryptDataFooter({ capsule }: { capsule: Vault.Capsule }) {
       return formdata;
     },
     onError: (error) => {
-      console.log("Error encrypting data:", error);
-      const reason =
-        // @ts-expect-error solidity error
-        error?.cause?.reason ??
-        error.message ??
-        "알 수 없는 오류가 발생했습니다.";
-
-      toast({ description: `타임캡슐 암호화에 실패했습니다: ${reason}` });
+      toast({
+        title: "타임캡슐 암호화에 실패했습니다",
+        description: error.message,
+      });
     },
   });
 
+  const { writeContractAsync } = useWriteContract();
   const form = useForm({ resolver: zodResolver(fileFormSchema) });
 
   const onSubmit = form.handleSubmit(async (values) => {
@@ -87,7 +47,22 @@ export function EncryptDataFooter({ capsule }: { capsule: Vault.Capsule }) {
     const publicKey = formdata.get("publicKey") as Hex;
     const encryptedKeys = formdata.getAll("encryptedKeys") as Hex[];
 
-    await submitPublicKey.mutateAsync({ publicKey, encryptedKeys });
+    await writeContractAsync(
+      {
+        ...contracts.Vault,
+        functionName: "encrypt",
+        args: [capsule.id, publicKey, encryptedKeys],
+      },
+      {
+        onError(error) {
+          toast({
+            title: "타임캡슐 암호화에 실패했습니다",
+            // @ts-expect-error solidity error
+            description: error.cause?.reason ?? error.message,
+          });
+        },
+      },
+    );
 
     downloadFileViaBlob(encrypted, `${file.name}.enc`);
     toast({ description: "타임캡슐을 암호화했습니다." });

@@ -1,66 +1,37 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { hexToBigInt, hexToBytes } from "viem";
+import { useReadContract, useWriteContract } from "wagmi";
 import { z } from "zod";
 
 import { Form, FormField } from "@/components/ui/form";
 import { toast } from "@/components/ui/toast";
+import { contracts } from "@/lib/blockchain";
 import { Vault } from "@/lib/blockchain/contracts";
-import { useAccount, useContractContext } from "@/lib/blockchain/react";
 import { EccKey, SymmetricKey } from "@/lib/crypto";
 import { downloadFileViaBlob } from "@/lib/file";
 
 const fileFormSchema = z.object({ file: z.instanceof(File) });
 
 export function OpenCapsuleFooter({ capsule }: { capsule: Vault.Capsule }) {
-  const {
-    client,
-    contracts: { vault },
-  } = useContractContext();
-  const account = useAccount();
+  const form = useForm({ resolver: zodResolver(fileFormSchema) });
 
-  const getParticipants = async () => {
-    const participants = await vault.read.getParticipants([capsule.id], {
-      account: account.address,
-    });
-    return participants;
-  };
-
-  const approve = useMutation({
-    mutationKey: ["approve", capsule.id.toString()],
-    mutationFn: async () => {
-      const { result, request } = await vault.simulate.approve([capsule.id], {
-        account: account.address,
-      });
-      const hash = await client.writeContract(request);
-
-      return { result, hash };
-    },
-
-    onSuccess: ({ result, hash }) => {
-      console.log("Transaction result:", result, hash);
-    },
-    onError: (error) => {
-      console.log("Error opening capsule:", error);
-      const reason =
-        // @ts-expect-error solidity error
-        error?.cause?.reason ??
-        error.message ??
-        "알 수 없는 오류가 발생했습니다.";
-
-      toast({ description: `타임캡슐 개봉에 실패했습니다: ${reason}` });
+  const { writeContractAsync } = useWriteContract();
+  const participants = useReadContract({
+    ...contracts.Vault,
+    functionName: "getParticipants",
+    query: {
+      enabled: form.formState.touchedFields.file,
+      refetchOnWindowFocus: false,
+      staleTime: 1000 * 60 * 5, // 5 minutes
     },
   });
-
-  const form = useForm({ resolver: zodResolver(fileFormSchema) });
 
   const onSubmit = form.handleSubmit(async (values) => {
     const file = values.file;
     const ownerKeypair = EccKey.fromPublicKey(hexToBytes(capsule.publicKey));
 
-    const participants = await getParticipants();
-    const participant = participants.find(
+    const participant = (await participants.promise).find(
       (p) => hexToBigInt(p.privateKey) > 0n,
     );
     if (!participant) {
@@ -79,7 +50,18 @@ export function OpenCapsuleFooter({ capsule }: { capsule: Vault.Capsule }) {
     const data = await file.arrayBuffer();
     const decrypted = await masterKey.decrypt(data, hexToBytes(capsule.iv));
 
-    await approve.mutateAsync();
+    await writeContractAsync(
+      { ...contracts.Vault, functionName: "approve", args: [capsule.id] },
+      {
+        onError(error) {
+          toast({
+            title: "타임캡슐 개봉에 실패했습니다",
+            // @ts-expect-error solidity error
+            description: error.cause?.reason ?? error.message,
+          });
+        },
+      },
+    );
 
     const filename = file.name.endsWith(".enc")
       ? file.name.slice(0, -4)

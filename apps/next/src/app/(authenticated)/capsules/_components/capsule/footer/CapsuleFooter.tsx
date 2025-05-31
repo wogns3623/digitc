@@ -1,7 +1,7 @@
 import dayjs from "dayjs";
 
 import { Vault } from "@/lib/blockchain/contracts";
-import { useAccount } from "@/lib/blockchain/react";
+import { useAssertedAccount } from "@/lib/blockchain/react";
 
 import { EncryptDataFooter } from "./EncryptDataFooter";
 import { OpenCapsuleFooter } from "./OpenCapsuleFooter";
@@ -15,7 +15,7 @@ export function CapsuleFooter({
   capsule: Vault.Capsule;
   participant?: Vault.Participant;
 }) {
-  const account = useAccount();
+  const account = useAssertedAccount();
 
   const isOwner = account.address === capsule.owner;
   const isParticipant = participant && account.address === participant.addr;
