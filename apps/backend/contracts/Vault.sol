@@ -297,15 +297,38 @@ contract Vault {
 
     // 보상 배분 함수
     function distributeRewards(uint id) internal {
-        // Capsule storage capsule = capsules[id];
-        // // TODO: 제출자들에게 보상 배분
-        // uint currentBalance = capsule.fee;
-        // if (currentBalance == 0) {
-        //     // checks
-        //     revert();
-        // }
-        // capsule.fee = 0; // effects
-        // address[] memory participants;
+        Capsule storage capsule = capsules[id];
+        // TODO: 제출자들에게 보상 배분
+        uint bal = capsule.fee;
+        require(bal > 0);
+        capsule.fee = 0; // effects
+
+        ParticipantsLib.Participants storage participants = capsuleParticipants[
+            id
+        ];
+
+        uint len = 0;
+        ParticipantsLib.Participant[]
+            memory submittedParticipants = new ParticipantsLib.Participant[](
+                participants.list.length
+            );
+
+        for (uint i = 0; i < participants.list.length; i++) {
+            ParticipantsLib.Participant storage participant = participants.get(
+                i
+            );
+            if (participant.decryptAt == 0) continue; // 복호화하지 않은 참여자는 제외
+            submittedParticipants[len++] = participant;
+        }
+
+        // 균등 분배
+        for (uint i = 0; i < len; i++) {
+            ParticipantsLib.Participant
+                memory participant = submittedParticipants[i];
+            uint reward = bal / (len - i);
+            payable(participant.addr).transfer(reward);
+            bal -= reward;
+        }
     }
 
     // // secp256k1 타원 곡선 파라미터
