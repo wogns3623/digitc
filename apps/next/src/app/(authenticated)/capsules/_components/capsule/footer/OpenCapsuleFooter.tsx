@@ -57,21 +57,19 @@ export function OpenCapsuleFooter({ capsule }: { capsule: Vault.Capsule }) {
 
   const onSubmit = form.handleSubmit(async (values) => {
     const file = values.file;
-    const publicKey = new EccKey({ publicKey: hexToBytes(capsule.publicKey) });
+    const ownerKeypair = EccKey.fromPublicKey(hexToBytes(capsule.publicKey));
 
     const participants = await getParticipants();
-    const participant = participants.find(
-      (p) => hexToBool(p.privateKey) && p.isApproved,
-    );
+    const participant = participants.find((p) => hexToBool(p.privateKey));
     if (!participant) {
       toast({ description: "아직 키를 제출한 참여자가 없습니다." });
       return;
     }
 
-    const privateKey = new EccKey({
-      privateKey: hexToBytes(participant.privateKey),
-    });
-    const secretKey = await publicKey.deriveKey(privateKey);
+    const participantKeypair = EccKey.fromPrivateKey(
+      hexToBytes(participant.privateKey),
+    );
+    const secretKey = await ownerKeypair.deriveKey(participantKeypair);
     const masterKey = await secretKey
       .decrypt(hexToBytes(participant.encryptedKey), hexToBytes(capsule.iv))
       .then(SymmetricKey.import);

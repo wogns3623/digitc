@@ -12,7 +12,9 @@ import {
 import { useState } from "react";
 
 import { useQuery } from "@tanstack/react-query";
-import { Account, getContract, GetContractReturnType } from "viem";
+import { useReadLocalStorage } from "usehooks-ts";
+import { Account, getContract, GetContractReturnType, Hex } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
 
 import { getClient } from "@/lib/blockchain";
 import { Vault } from "@/lib/blockchain/contracts";
@@ -31,13 +33,27 @@ const ContractContext = createContext<{
 } | null>(null);
 
 export function ContractProvider({ children }: { children: ReactNode }) {
-  const [client, setClient] = useState(() => getClient());
+  const [account, setAccountRaw] = useState<Account | null>(() => {
+    try {
+      if (typeof window === "undefined") return null;
+
+      const localAccount = localStorage.getItem("accountPrivateKey");
+      if (!localAccount) return null;
+
+      const { privateKey } = JSON.parse(localAccount) as { privateKey: Hex };
+
+      return privateKeyToAccount(privateKey);
+    } catch (error) {
+      console.error("Failed to parse account from local storage:", error);
+      return null;
+    }
+  });
+
+  const [client, setClient] = useState(() => getClient(account ?? undefined));
 
   const vault = useMemo(() => {
     return getContract({ address: Vault.address, abi: Vault.abi, client });
   }, [client]);
-
-  const [account, setAccountRaw] = useState<Account | null>(null);
 
   const setAccount = useCallback((account: Account | null) => {
     setAccountRaw(account);

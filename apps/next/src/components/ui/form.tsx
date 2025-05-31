@@ -188,7 +188,7 @@ function FormMessage({ className, ...props }: ComponentProps<"p">) {
     <p
       data-slot="form-message"
       id={formMessageId}
-      className={cn("text-sm", error && "text-error-content", className)}
+      className={cn("text-sm", error && "text-error", className)}
       {...props}
     >
       {body}

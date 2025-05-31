@@ -12,7 +12,7 @@ type ToastProps = React.ComponentPropsWithoutRef<typeof Toast.Root>;
 type ToastActionElement = React.ReactElement<typeof Toast.Action>;
 
 const TOAST_LIMIT = 1;
-const TOAST_REMOVE_DELAY = 1000;
+const TOAST_REMOVE_DELAY = 5000;
 
 type ToasterToast = ToastProps & {
   id: string;

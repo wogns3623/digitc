@@ -41,10 +41,12 @@ export function ParticipateFooter({ capsule }: { capsule: Vault.Capsule }) {
   });
 
   const onParticipate = async () => {
-    const participantKey = await EccKey.generate();
-    await participate.mutateAsync(bytesToHex(participantKey.export.publicKey));
+    const participantKey = EccKey.generate();
+    await participate.mutateAsync(bytesToHex(participantKey.exportPublicKey()));
     const blob = new Blob([
-      wrapPem(Buffer.from(participantKey.export.privateKey).toString("base64")),
+      wrapPem(
+        Buffer.from(participantKey.exportPrivateKey()).toString("base64"),
+      ),
     ]);
 
     downloadFileViaBlob(blob, `capsule_${capsule.id}.pem`);

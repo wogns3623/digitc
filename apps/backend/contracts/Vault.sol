@@ -2,6 +2,7 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import "./ParticipantsLib.sol";
+import "./EllipticCurve.sol";
 
 contract Vault {
     uint private _id = 0;
@@ -41,15 +42,11 @@ contract Vault {
         /**
          * @dev 암호화에 사용되는 초기화 벡터
          */
-        bytes iv;
+        bytes12 iv;
         /**
-         * @dev 캡슐 소유자의 ECDH 공개키
+         * @dev 캡슐 소유자의 ECDH 공개키 x 좌표
          */
-        bytes publicKey;
-        /**
-         * @dev 캡슐 데이터 복호화에 사용되는 마스터 키
-         */
-        bytes decryptedKey;
+        bytes32 publicKey;
     }
 
     using ParticipantsLib for ParticipantsLib.Participants;
@@ -130,7 +127,7 @@ contract Vault {
     function register(
         string memory title,
         uint releasedAt,
-        bytes memory iv
+        bytes12 iv
     ) external payable returns (uint) {
         // require(msg.value > 0, "Fee must be greater than 0");
         require(
@@ -163,9 +160,9 @@ contract Vault {
         return id;
     }
 
-    event Participated(uint id, address participant, bytes publicKey);
+    event Participated(uint id, address participant, bytes32 publicKey);
 
-    function participate(uint id, bytes memory publicKey) external {
+    function participate(uint id, bytes32 publicKey) external {
         Capsule storage capsule = capsules[id];
         require(
             capsule.status == CapsuleStatus.Registered,
@@ -177,14 +174,14 @@ contract Vault {
         emit Participated(id, msg.sender, publicKey);
     }
 
-    event Encrypted(uint id, bytes publicKey, bytes[] encryptedKeys);
+    event Encrypted(uint id, bytes32 publicKey, bytes[] encryptedKeys);
     /**
      * 타임캡슐을 암호화하고 각 참여자에게 복호화 키를 발급합니다.
      * @param id 타임캡슐 ID
      */
     function encrypt(
         uint id,
-        bytes memory publicKey,
+        bytes32 publicKey,
         bytes[] memory encryptedKeys
     ) external {
         Capsule storage capsule = capsules[id];
@@ -215,9 +212,9 @@ contract Vault {
         emit Encrypted(id, publicKey, encryptedKeys);
     }
 
-    event Decrypted(uint id, bytes privateKey);
+    event Decrypted(uint id, bytes32 privateKey);
 
-    function decrypt(uint id, bytes memory privateKey) external {
+    function decrypt(uint id, bytes32 privateKey) external {
         Capsule storage capsule = capsules[id];
         ParticipantsLib.Participants storage participants = capsuleParticipants[
             id
@@ -230,34 +227,17 @@ contract Vault {
             participants.has(msg.sender),
             "Only participants can decrypt the capsule"
         );
-
         ParticipantsLib.Participant storage participant = participants.get(
             msg.sender
         );
+        require(
+            participant.publicKey == derivePublicKey(privateKey),
+            "Invalid private key"
+        );
 
         participant.decryptAt = block.timestamp;
-        // TODO: 참여자의 복호화 키가 잘못되었을때를 대비해야 함
         participant.privateKey = privateKey;
-
-        // bool isValid = verify(participant.publicKey, secretKey);
-
-        // (bytes memory decryptedKey, bool valid) = decryptKey(
-        //     participant.privateKey,
-        //     participant.encryptedKey
-        // );
-        // if (!valid) revert("Invalid private key");
-
-        // capsule.decryptedKey = decryptedKey;
-        // participant.isApproved = true;
-        // emit Decrypted(id, capsule.decryptedKey);
     }
-
-    // function decryptKey(
-    //     bytes memory privateKey,
-    //     bytes memory encryptedKey
-    // ) internal pure returns (bytes memory, bool) {
-    //     return ("", true);
-    // }
 
     function approve(uint id) public payable {
         Capsule storage capsule = capsules[id];
@@ -326,5 +306,33 @@ contract Vault {
         // }
         // capsule.fee = 0; // effects
         // address[] memory participants;
+    }
+
+    // // secp256k1 타원 곡선 파라미터
+    // uint256 private constant GX =
+    //     0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798;
+    // uint256 private constant GY =
+    //     0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8;
+    // uint256 private constant AA = 0;
+    // uint256 private constant BB = 7;
+    // uint256 private constant PP =
+    //     0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F;
+
+    // p256 타원 곡선 파라미터
+    uint256 private constant GX =
+        0x6B17D1F2E12C4247F8BCE6E563A440F277037D812DEB33A0F4A13945D898C296;
+    uint256 private constant GY =
+        0x4FE342E2FE1A7F9B8EE7EB4A7C0F9E162BCE33576B315ECECBB6406837BF51F5;
+    uint256 private constant AA =
+        0xFFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFC;
+    uint256 private constant BB =
+        0x5AC635D8AA3A93E7B3EBBD55769886BC651D06B0CC53B0F63BCE3C3E27D2604B;
+    uint256 private constant PP =
+        0xFFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF;
+
+    function derivePublicKey(bytes32 privKey) internal pure returns (bytes32) {
+        (uint256 x, ) = EllipticCurve.ecMul(uint256(privKey), GX, GY, AA, PP);
+
+        return bytes32(x);
     }
 }

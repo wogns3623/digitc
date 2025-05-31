@@ -5,19 +5,18 @@ library ParticipantsLib {
     struct Participant {
         address addr;
         /**
-         * @dev 각 참여자의 ECDH 공개키
+         * @dev 각 참여자의 ECDH 공개키 x 좌표
          */
-        bytes publicKey;
+        bytes32 publicKey;
         /**
-         * @dev 암호화된 마스터 키
+         * @dev 암호화된 마스터 키 bytes48
          */
         bytes encryptedKey;
         /**
          * @dev 각 참여자의 ECDH 비밀키
          */
-        bytes privateKey;
+        bytes32 privateKey;
         uint decryptAt;
-        bool isApproved;
     }
 
     struct Participants {
@@ -28,10 +27,10 @@ library ParticipantsLib {
     function add(
         Participants storage participants,
         address addr,
-        bytes memory publicKey
+        bytes32 publicKey
     ) external {
         require(participants.map[addr] == 0, "Participant already exists");
-        participants.list.push(Participant(addr, publicKey, "", "", 0, false));
+        participants.list.push(Participant(addr, publicKey, "", 0, 0));
         participants.map[addr] = participants.list.length;
     }
 

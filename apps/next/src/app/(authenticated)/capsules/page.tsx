@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -26,7 +27,7 @@ const formSchema = z.object({
     .string()
     .datetime({ local: true, message: "유효한 날짜를 입력해주세요." })
     .transform(dayjs)
-    .refine((date) => dayjs().isBefore(date, "day"), {
+    .refine((date) => dayjs().isBefore(date, "minute"), {
       message: "개봉일은 현재 시간 이후여야 합니다.",
     })
     .transform((date) => BigInt(date.unix())),
@@ -49,29 +50,41 @@ export default function CapsuleHomePage() {
     },
   });
 
-  const onSubmit = form.handleSubmit(async ({ fee, title, releasedAt }) => {
-    const iv = bytesToHex(generateIV());
+  const createCapsule = useMutation({
+    mutationKey: ["createCapsule"],
+    mutationFn: async ({
+      fee,
+      title,
+      releasedAt,
+    }: typeof formSchema._output) => {
+      const iv = bytesToHex(generateIV());
 
-    try {
       const { result, request } = await vault.simulate.register(
         [title, releasedAt, iv],
         { account: account.address, value: fee },
       );
       const hash = await client.writeContract(request);
-      console.log("Transaction result:", result, hash);
 
-      toast({ description: "타임캡슐이 등록되었습니다." });
-    } catch (error) {
+      return { result, hash };
+    },
+    onSuccess: ({ result, hash }) => {
+      console.log("Transaction result:", result, hash);
+    },
+    onError: (error) => {
       console.log("Error registering capsule:", error);
       const reason =
         // @ts-expect-error solidity error
         error?.cause?.reason ??
-        // @ts-expect-error solidity error
         error?.message ??
         "알 수 없는 오류가 발생했습니다.";
 
       toast({ description: `타임캡슐 등록에 실패했습니다: ${reason}` });
-    }
+    },
+  });
+
+  const onSubmit = form.handleSubmit(async (values) => {
+    await createCapsule.mutateAsync(values);
+    toast({ description: "타임캡슐이 등록되었습니다." });
   });
 
   return (

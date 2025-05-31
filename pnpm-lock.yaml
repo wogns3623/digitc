@@ -99,6 +99,9 @@ importers:
       dayjs:
         specifier: ^1.11.13
         version: 1.11.13
+      elliptic:
+        specifier: ^6.6.1
+        version: 6.6.1
       hardhat:
         specifier: ^2.14.0
         version: 2.24.0(ts-node@10.9.2(@types/node@20.17.50)(typescript@5.8.3))(typescript@5.8.3)
@@ -142,6 +145,9 @@ importers:
       '@trivago/prettier-plugin-sort-imports':
         specifier: ^5.2.2
         version: 5.2.2(prettier@3.5.3)
+      '@types/elliptic':
+        specifier: ^6.4.18
+        version: 6.4.18
       '@types/node':
         specifier: ^20
         version: 20.17.50
@@ -1188,6 +1194,9 @@ packages:
 
   '@types/concat-stream@1.6.1':
     resolution: {integrity: sha512-eHE4cQPoj6ngxBZMvVf6Hw7Mh4jMW4U9lpGmS5GBPB9RYxlFg+CHaVN7ErNY4W9XfLIEn20b4VDYaIrbq0q4uA==}
+
+  '@types/elliptic@6.4.18':
+    resolution: {integrity: sha512-UseG6H5vjRiNpQvrhy4VF/JXdA3V/Fp5amvveaL+fs28BZ6xIKJBPnUPRlEaZpysD9MbpfaLi8lbl7PGUAkpWw==}
 
   '@types/estree@1.0.7':
     resolution: {integrity: sha512-w28IoSUCJpidD/TGviZwwMJckNESJZXFu7NBZ5YJ4mEUnNraUn9Pm8HSZm/jDF1pDWYKspWE7oVphigUPRakIQ==}
@@ -5097,6 +5106,10 @@ snapshots:
   '@types/concat-stream@1.6.1':
     dependencies:
       '@types/node': 20.17.50
+
+  '@types/elliptic@6.4.18':
+    dependencies:
+      '@types/bn.js': 5.1.6
 
   '@types/estree@1.0.7': {}
 

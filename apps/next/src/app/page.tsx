@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { redirect } from "next/navigation";
+import { useLocalStorage } from "usehooks-ts";
 import { Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
@@ -10,10 +11,10 @@ import { knownAccounts } from "@/lib/blockchain";
 import { useContractContext } from "@/lib/blockchain/react";
 
 export default function HomePage() {
-  const { setAccount } = useContractContext();
-  const [localAccount, setLocalAccount] = useState<{ privateKey: Hex } | null>(
-    null,
-  );
+  const { account, setAccount } = useContractContext();
+  const [localAccount, setLocalAccount] = useLocalStorage<{
+    privateKey: Hex;
+  } | null>("accountPrivateKey", null, { initializeWithValue: false });
 
   return (
     <div className="flex h-screen w-full items-center justify-center">
@@ -40,7 +41,7 @@ export default function HomePage() {
 
         <button
           type="submit"
-          disabled={localAccount === null}
+          disabled={!localAccount}
           className="btn btn-primary mt-4 w-full"
           onClick={() => {
             if (localAccount) redirect("/capsules");

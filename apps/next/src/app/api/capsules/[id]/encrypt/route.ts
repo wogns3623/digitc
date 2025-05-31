@@ -26,18 +26,19 @@ export async function POST(
 
   const masterKey = await SymmetricKey.generate();
   const exportedMasterKey = await masterKey.export();
-  const ownerKey = await EccKey.generate();
+  const ownerKeypair = EccKey.generate();
 
+  const publicKey = bytesToHex(ownerKeypair.exportPublicKey());
   const encryptedKeys = await Promise.all(
     participants.map(async (participant) => {
-      const participantKey = new EccKey({
-        publicKey: hexToBytes(participant.publicKey),
-      });
+      const participantKeypair = EccKey.fromPublicKey(
+        hexToBytes(participant.publicKey),
+      );
 
-      const participantSecretKey = await ownerKey.deriveKey(participantKey);
+      const derivedKey = await ownerKeypair.deriveKey(participantKeypair);
 
       // TODO: using .wrapKey() instead of .encrypt()
-      const participantEncryptedKey = await participantSecretKey.encrypt(
+      const participantEncryptedKey = await derivedKey.encrypt(
         exportedMasterKey,
         iv,
       );
@@ -52,7 +53,7 @@ export async function POST(
   const encryptedData = await masterKey.encrypt(data, iv);
 
   const formdata = new FormData();
-  formdata.append("publicKey", bytesToHex(ownerKey.export.publicKey));
+  formdata.append("publicKey", publicKey);
   encryptedKeys.forEach((encryptedKey) =>
     formdata.append("encryptedKeys", encryptedKey),
   );

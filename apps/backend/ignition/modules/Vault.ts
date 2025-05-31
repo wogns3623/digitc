@@ -4,12 +4,16 @@
 import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
 
 const VaultModule = buildModule("VaultModule", (m) => {
-  const participantsLib = m.library("ParticipantsLib");
-  const vault = m.contract("Vault", [], {
-    libraries: { ParticipantsLib: participantsLib },
+  const ParticipantsLib = m.library("ParticipantsLib");
+  // const EllipticCurve = m.library("EllipticCurve");
+  const Vault = m.contract("Vault", [], {
+    libraries: {
+      ParticipantsLib,
+      // EllipticCurve
+    },
   });
 
-  return { vault };
+  return { Vault };
 });
 
 export default VaultModule;
