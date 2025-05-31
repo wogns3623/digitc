@@ -1,3 +1,5 @@
+import dayjs from "dayjs";
+
 import { Vault } from "@/lib/blockchain/contracts";
 import { useAccount } from "@/lib/blockchain/react";
 
@@ -8,21 +10,28 @@ import { SubmitPrivateKeyFooter } from "./SubmitPrivateKeyFooter";
 
 export function CapsuleFooter({
   capsule,
-  participated,
+  participant,
 }: {
   capsule: Vault.Capsule;
-  participated: boolean;
+  participant?: Vault.Participant;
 }) {
   const account = useAccount();
 
   const isOwner = account.address === capsule.owner;
+  const isParticipant = participant && account.address === participant.addr;
+  const isReleased =
+    dayjs.unix(Number(capsule.releasedAt)).diff(dayjs(), "seconds") <= 0;
+  const alreadySubmitted = participant && BigInt(participant.privateKey) > 0n;
 
   if (capsule.status === Vault.CapsuleStatus.Registered) {
     if (isOwner) return <EncryptDataFooter capsule={capsule} />;
-    else if (!participated) return <ParticipateFooter capsule={capsule} />;
+    else if (!isParticipant) return <ParticipateFooter capsule={capsule} />;
   } else if (capsule.status === Vault.CapsuleStatus.Encrypted) {
-    if (participated) return <SubmitPrivateKeyFooter capsule={capsule} />;
+    if (isParticipant && !isReleased)
+      return <SubmitPrivateKeyFooter capsule={capsule} />;
   } else if (capsule.status === Vault.CapsuleStatus.Decrypted) {
+    if (isParticipant && !alreadySubmitted)
+      return <SubmitPrivateKeyFooter capsule={capsule} />;
     if (isOwner) return <OpenCapsuleFooter capsule={capsule} />;
   }
 

@@ -34,11 +34,7 @@ export default function MyCapsulesPage() {
       ) : (
         <ul className="space-y-2">
           {capsules.data.map((capsule) => (
-            <CapsuleCard
-              capsule={capsule}
-              participated={false}
-              key={capsule.id}
-            />
+            <CapsuleCard capsule={capsule} key={capsule.id} />
           ))}
         </ul>
       )}

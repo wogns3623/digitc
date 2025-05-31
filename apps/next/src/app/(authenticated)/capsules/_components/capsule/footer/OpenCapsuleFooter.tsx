@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
-import { hexToBool, hexToBytes } from "viem";
+import { hexToBigInt, hexToBytes } from "viem";
 import { z } from "zod";
 
 import { Form, FormField } from "@/components/ui/form";
@@ -60,7 +60,9 @@ export function OpenCapsuleFooter({ capsule }: { capsule: Vault.Capsule }) {
     const ownerKeypair = EccKey.fromPublicKey(hexToBytes(capsule.publicKey));
 
     const participants = await getParticipants();
-    const participant = participants.find((p) => hexToBool(p.privateKey));
+    const participant = participants.find(
+      (p) => hexToBigInt(p.privateKey) > 0n,
+    );
     if (!participant) {
       toast({ description: "아직 키를 제출한 참여자가 없습니다." });
       return;
@@ -72,7 +74,7 @@ export function OpenCapsuleFooter({ capsule }: { capsule: Vault.Capsule }) {
     const secretKey = await ownerKeypair.deriveKey(participantKeypair);
     const masterKey = await secretKey
       .decrypt(hexToBytes(participant.encryptedKey), hexToBytes(capsule.iv))
-      .then(SymmetricKey.import);
+      .then((keyBytes) => SymmetricKey.import(keyBytes));
 
     const data = await file.arrayBuffer();
     const decrypted = await masterKey.decrypt(data, hexToBytes(capsule.iv));

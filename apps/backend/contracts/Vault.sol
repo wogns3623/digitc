@@ -72,33 +72,50 @@ contract Vault {
     function getAvailableCapsules()
         public
         view
-        returns (Capsule[] memory, bool[] memory)
+        returns (Capsule[] memory, ParticipantsLib.Participant[] memory)
     {
         Capsule[] memory availableCapsules = new Capsule[](
             availableCapsuleIds.length
         );
-        bool[] memory participated = new bool[](availableCapsuleIds.length);
+        ParticipantsLib.Participant[]
+            memory participants = new ParticipantsLib.Participant[](
+                availableCapsuleIds.length
+            );
 
         for (uint i = 0; i < availableCapsuleIds.length; i++) {
             availableCapsules[i] = capsules[availableCapsuleIds[i]];
-            participated[i] = capsuleParticipants[i].map[msg.sender] > 0;
+            if (capsuleParticipants[i].has(msg.sender))
+                participants[i] = capsuleParticipants[i].get(msg.sender);
         }
 
-        return (availableCapsules, participated);
+        return (availableCapsules, participants);
     }
 
-    function getParticipatedCapsules() public view returns (Capsule[] memory) {
+    function getParticipatedCapsules()
+        public
+        view
+        returns (Capsule[] memory, ParticipantsLib.Participant[] memory)
+    {
         Capsule[] memory participatedCapsules = new Capsule[](
             participatedCapsuleIds[msg.sender].length
         );
+        ParticipantsLib.Participant[]
+            memory participants = new ParticipantsLib.Participant[](
+                participatedCapsuleIds[msg.sender].length
+            );
 
         for (uint i = 0; i < participatedCapsuleIds[msg.sender].length; i++) {
-            participatedCapsules[i] = capsules[
+            Capsule storage capsule = capsules[
                 participatedCapsuleIds[msg.sender][i]
             ];
+            participatedCapsules[i] = capsule;
+            if (capsuleParticipants[capsule.id].has(msg.sender))
+                participants[i] = capsuleParticipants[capsule.id].get(
+                    msg.sender
+                );
         }
 
-        return participatedCapsules;
+        return (participatedCapsules, participants);
     }
 
     function getCapsule(uint id) public view returns (Capsule memory) {
@@ -162,7 +179,7 @@ contract Vault {
 
     event Participated(uint id, address participant, bytes32 publicKey);
 
-    function participate(uint id, bytes32 publicKey) external {
+    function participate(uint id, bytes32 publicKey) public payable {
         Capsule storage capsule = capsules[id];
         require(
             capsule.status == CapsuleStatus.Registered,
@@ -227,6 +244,10 @@ contract Vault {
             participants.has(msg.sender),
             "Only participants can decrypt the capsule"
         );
+        require(
+            block.timestamp >= capsule.releasedAt,
+            "Capsule is not released yet"
+        );
         ParticipantsLib.Participant storage participant = participants.get(
             msg.sender
         );
@@ -237,13 +258,15 @@ contract Vault {
 
         participant.decryptAt = block.timestamp;
         participant.privateKey = privateKey;
+        capsule.status = CapsuleStatus.Decrypted;
+        emit Decrypted(id, privateKey);
     }
 
     function approve(uint id) public payable {
         Capsule storage capsule = capsules[id];
         require(
-            capsule.status == CapsuleStatus.Encrypted,
-            "Capsule is not encrypted"
+            capsule.status == CapsuleStatus.Decrypted,
+            "Capsule is not decrypted yet"
         );
         require(
             msg.sender == capsule.owner,
@@ -318,6 +341,7 @@ contract Vault {
                 i
             );
             if (participant.decryptAt == 0) continue; // 복호화하지 않은 참여자는 제외
+            if (participant.addr == address(0)) continue; // 이미 보상을 지급한 참여자는 제외
             submittedParticipants[len++] = participant;
         }
 
@@ -326,8 +350,22 @@ contract Vault {
             ParticipantsLib.Participant
                 memory participant = submittedParticipants[i];
             uint reward = bal / (len - i);
-            payable(participant.addr).transfer(reward);
+            address payable recipientAddr = payable(participant.addr);
             bal -= reward;
+            participant.addr = address(0);
+
+            (bool success, ) = recipientAddr.call{value: reward}("");
+
+            if (!success) {
+                capsule.fee = bal + reward; // revert effects
+                participant.addr = recipientAddr; // revert effects
+                revert("Failed to transfer reward");
+            }
+        }
+
+        // 남은 잔액이 있다면 캡슐 소유자에게 반환
+        if (bal > 0) {
+            payable(capsule.owner).transfer(bal);
         }
     }
 

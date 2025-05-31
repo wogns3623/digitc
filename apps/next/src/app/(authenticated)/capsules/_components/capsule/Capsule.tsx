@@ -10,10 +10,10 @@ import { CapsuleFooter } from "./footer/CapsuleFooter";
 
 export function CapsuleCard({
   capsule,
-  participated,
+  participant,
 }: {
   capsule: Vault.Capsule;
-  participated: boolean;
+  participant?: Vault.Participant;
 }) {
   const releasedAt = dayjs.unix(Number(capsule.releasedAt));
   const { isNegative, days, hours, minutes, seconds } =
@@ -69,7 +69,7 @@ export function CapsuleCard({
         </section>
 
         <div className="card-actions flex justify-between">
-          <CapsuleFooter capsule={capsule} participated={participated} />
+          <CapsuleFooter capsule={capsule} participant={participant} />
         </div>
       </div>
     </li>

@@ -14,10 +14,10 @@ export default function AvailableCapsulesPage() {
   const capsules = useQuery({
     queryKey: ["availableCapsules"],
     queryFn: async () => {
-      const [capsules, participated] = await vault.read.getAvailableCapsules();
+      const [capsules, participants] = await vault.read.getAvailableCapsules();
       return capsules.map((capsule, i) => ({
         capsule,
-        participated: participated[i],
+        participant: participants[i],
       }));
     },
     refetchOnWindowFocus: false,
@@ -36,10 +36,10 @@ export default function AvailableCapsulesPage() {
         <p className="text-base-content/70">참여 가능한 타임캡슐이 없습니다.</p>
       ) : (
         <ul className="space-y-2">
-          {capsules.data.map(({ capsule, participated }) => (
+          {capsules.data.map(({ capsule, participant }) => (
             <CapsuleCard
               capsule={capsule}
-              participated={participated}
+              participant={participant}
               key={capsule.id}
             />
           ))}

@@ -168,7 +168,7 @@ export class EccKey<T extends EccKeyType = "public"> {
       ? this.key.derive(other.key.getPublic())
       : other.key.derive(this.key.getPublic());
 
-    return SymmetricKey.import(secretKey.toBuffer());
+    return SymmetricKey.import(new Uint8Array(secretKey.toArray()));
   }
 
   hasPrivateKey(): this is EccKey<"private"> {

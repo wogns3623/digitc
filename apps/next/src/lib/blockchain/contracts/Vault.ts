@@ -148,7 +148,18 @@ export const abi = [
         name: "",
         type: "tuple[]",
       },
-      { internalType: "bool[]", name: "", type: "bool[]" },
+      {
+        components: [
+          { internalType: "address", name: "addr", type: "address" },
+          { internalType: "bytes32", name: "publicKey", type: "bytes32" },
+          { internalType: "bytes", name: "encryptedKey", type: "bytes" },
+          { internalType: "bytes32", name: "privateKey", type: "bytes32" },
+          { internalType: "uint256", name: "decryptAt", type: "uint256" },
+        ],
+        internalType: "struct ParticipantsLib.Participant[]",
+        name: "",
+        type: "tuple[]",
+      },
     ],
     stateMutability: "view",
     type: "function",
@@ -268,6 +279,18 @@ export const abi = [
         name: "",
         type: "tuple[]",
       },
+      {
+        components: [
+          { internalType: "address", name: "addr", type: "address" },
+          { internalType: "bytes32", name: "publicKey", type: "bytes32" },
+          { internalType: "bytes", name: "encryptedKey", type: "bytes" },
+          { internalType: "bytes32", name: "privateKey", type: "bytes32" },
+          { internalType: "uint256", name: "decryptAt", type: "uint256" },
+        ],
+        internalType: "struct ParticipantsLib.Participant[]",
+        name: "",
+        type: "tuple[]",
+      },
     ],
     stateMutability: "view",
     type: "function",
@@ -286,7 +309,7 @@ export const abi = [
     ],
     name: "participate",
     outputs: [],
-    stateMutability: "nonpayable",
+    stateMutability: "payable",
     type: "function",
   },
   {
@@ -304,6 +327,9 @@ export const abi = [
 
 export type Contract = GetContractReturnType<typeof abi, Client>;
 export type Capsule = Awaited<ReturnType<Contract["read"]["getCapsule"]>>;
+export type Participant = Awaited<
+  ReturnType<Contract["read"]["getParticipants"]>
+>[number];
 
 export enum CapsuleStatus {
   Null,

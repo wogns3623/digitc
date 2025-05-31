@@ -14,8 +14,12 @@ export default function ParticipatedCapsulesPage() {
   const capsules = useQuery({
     queryKey: ["participatedCapsules"],
     queryFn: async () => {
-      const capsules = await vault.read.getParticipatedCapsules();
-      return capsules;
+      const [capsules, participants] =
+        await vault.read.getParticipatedCapsules();
+      return capsules.map((capsule, i) => ({
+        capsule,
+        participant: participants[i],
+      }));
     },
     refetchOnWindowFocus: false,
     staleTime: 1000 * 60 * 5, // 5 minutes
@@ -33,12 +37,8 @@ export default function ParticipatedCapsulesPage() {
         <p className="text-base-content/70">참여한 타임캡슐이 없습니다.</p>
       ) : (
         <ul className="space-y-2">
-          {capsules.data.map((capsule) => (
-            <CapsuleCard
-              capsule={capsule}
-              participated={true}
-              key={capsule.id}
-            />
+          {capsules.data.map(({ capsule, participant }) => (
+            <CapsuleCard capsule={capsule} participant={participant} />
           ))}
         </ul>
       )}

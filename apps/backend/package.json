@@ -5,7 +5,7 @@
     "coverage": "hardhat coverage --network hardhat",
     "build": "hardhat compile",
     "dev": "hardhat node",
-    "deploy:local": "hardhat ignition deploy ./ignition/modules/Vault.ts --network localhost --reset"
+    "deploy:local": "hardhat ignition deploy ./ignition/modules/Vault.ts --network localhost"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ignition": "^0.15.0",
