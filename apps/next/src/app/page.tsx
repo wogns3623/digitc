@@ -23,6 +23,7 @@ import { z } from "zod";
 
 import { Form, FormField } from "@/components/ui/form";
 import { toast } from "@/components/ui/toast";
+import { useCapsulesQueryInvalidation } from "@/hooks/capsuleQuery";
 import { contracts } from "@/lib/blockchain";
 import { generateIV } from "@/lib/crypto";
 
@@ -46,39 +47,6 @@ const ETH = 10n ** 18n; // 1 ETH in wei
 export default function HomePage() {
   const account = useAccount();
 
-  const { writeContractAsync } = useWriteContract();
-  const form = useForm({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      feeEth: "0",
-      title: "",
-      releasedAt: new Date().toDateString(),
-    },
-    disabled: !account.address,
-  });
-
-  const onSubmit = form.handleSubmit(async ({ feeEth, title, releasedAt }) => {
-    await writeContractAsync(
-      {
-        ...contracts.Vault,
-        functionName: "register",
-        args: [title, releasedAt, bytesToHex(generateIV())],
-        value: feeEth * ETH,
-      },
-      {
-        onError: (error) => {
-          toast({
-            title: "타임캡슐 등록에 실패했습니다",
-            // @ts-expect-error solidity error
-            description: error.cause?.reason ?? error.message,
-          });
-        },
-      },
-    );
-
-    toast({ description: "타임캡슐이 등록되었습니다." });
-  });
-
   return (
     <section className="flex h-screen flex-col items-center justify-center space-y-8 p-8">
       <div className="space-y-4 text-center">
@@ -89,76 +57,7 @@ export default function HomePage() {
         </p>
       </div>
 
-      {!account.isConnected ? (
-        <WalletOptions />
-      ) : (
-        <div className="flex space-x-4">
-          <section className="card card-border bg-base-300 flex flex-1 flex-col justify-between space-y-4 p-4">
-            <Account />
-
-            <section className="flex flex-col space-y-4">
-              <Link className="btn" href="/capsules/mine">
-                내 타임캡슐 보기
-              </Link>
-
-              <Link className="btn" href="/capsules/available">
-                타임캡슐에 참여하기
-              </Link>
-
-              <Link className="btn" href="/capsules/participated">
-                참여한 타임캡슐 보기
-              </Link>
-            </section>
-          </section>
-
-          <Form
-            form={form}
-            className="card card-border bg-base-300 flex flex-1 flex-col space-y-4 p-4"
-            onSubmit={onSubmit}
-          >
-            <FormField
-              control={form.control}
-              name="title"
-              description="타임캡슐 제목"
-              render={({ field }) => (
-                <label className="input">
-                  <span className="label">제목</span>
-                  <input type="text" placeholder="제목" {...field} />
-                </label>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="releasedAt"
-              description="타임캡슐이 개봉될 날짜"
-              render={({ field }) => (
-                <label className="input">
-                  <span className="label">개봉일</span>
-                  <input type="datetime-local" {...field} />
-                </label>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="feeEth"
-              description="타임캡슐 참여자가 받을 수수료"
-              render={({ field }) => (
-                <label className="input">
-                  <span className="label">수수료</span>
-                  <input type="number" placeholder="수수료" {...field} />
-                  <span className="label">ETH</span>
-                </label>
-              )}
-            />
-
-            <button className="btn" type="submit">
-              새 타임캡슐 만들기
-            </button>
-          </Form>
-        </div>
-      )}
+      {!account.isConnected ? <WalletOptions /> : <CreateCapsuleForm />}
     </section>
   );
 }
@@ -213,6 +112,117 @@ function Account() {
       <button className="btn w-full" onClick={() => disconnect()}>
         로그아웃
       </button>
+    </div>
+  );
+}
+
+function CreateCapsuleForm() {
+  const account = useAccount();
+
+  const { writeContractAsync } = useWriteContract();
+  const form = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      feeEth: "0",
+      title: "",
+      releasedAt: new Date().toDateString(),
+    },
+    disabled: !account.address,
+  });
+
+  const invalidateCapsulesQueries = useCapsulesQueryInvalidation();
+  const onSubmit = form.handleSubmit(async ({ feeEth, title, releasedAt }) => {
+    await writeContractAsync(
+      {
+        ...contracts.Vault,
+        functionName: "register",
+        args: [title, releasedAt, bytesToHex(generateIV())],
+        value: feeEth * ETH,
+      },
+      {
+        onError: (error) => {
+          toast({
+            title: "타임캡슐 등록에 실패했습니다",
+            // @ts-expect-error solidity error
+            description: error.cause?.reason ?? error.message,
+          });
+        },
+        onSuccess: () => {
+          invalidateCapsulesQueries();
+          form.reset();
+        },
+      },
+    );
+
+    toast({ description: "타임캡슐이 등록되었습니다." });
+  });
+
+  return (
+    <div className="flex space-x-4">
+      <section className="card card-border bg-base-300 flex flex-1 flex-col justify-between space-y-4 p-4">
+        <Account />
+
+        <section className="flex flex-col space-y-4">
+          <Link className="btn" href="/capsules/mine">
+            내 타임캡슐 보기
+          </Link>
+
+          <Link className="btn" href="/capsules/available">
+            타임캡슐에 참여하기
+          </Link>
+
+          <Link className="btn" href="/capsules/participated">
+            참여한 타임캡슐 보기
+          </Link>
+        </section>
+      </section>
+
+      <Form
+        form={form}
+        className="card card-border bg-base-300 flex flex-1 flex-col space-y-4 p-4"
+        onSubmit={onSubmit}
+      >
+        <FormField
+          control={form.control}
+          name="title"
+          description="타임캡슐 제목"
+          render={({ field }) => (
+            <label className="input">
+              <span className="label">제목</span>
+              <input type="text" placeholder="제목" {...field} />
+            </label>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="releasedAt"
+          description="타임캡슐이 개봉될 날짜"
+          render={({ field }) => (
+            <label className="input">
+              <span className="label">개봉일</span>
+              <input type="datetime-local" {...field} />
+            </label>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="feeEth"
+          description="타임캡슐 참여자가 받을 수수료"
+          render={({ field }) => (
+            <label className="input">
+              <span className="label">수수료</span>
+              <input type="number" placeholder="수수료" {...field} />
+              <span className="label">ETH</span>
+            </label>
+          )}
+        />
+
+        <button className="btn" type="submit">
+          새 타임캡슐 만들기
+        </button>
+      </Form>
     </div>
   );
 }

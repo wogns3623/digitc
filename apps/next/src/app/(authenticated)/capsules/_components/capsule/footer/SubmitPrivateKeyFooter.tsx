@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { Form, FormField } from "@/components/ui/form";
 import { toast } from "@/components/ui/toast";
+import { useCapsulesQueryInvalidation } from "@/hooks/capsuleQuery";
 import { contracts } from "@/lib/blockchain";
 import { Vault } from "@/lib/blockchain/contracts";
 import { unwrapPem } from "@/lib/crypto";
@@ -17,6 +18,7 @@ export function SubmitPrivateKeyFooter({
 }: {
   capsule: Vault.Capsule;
 }) {
+  const invalidateCapsulesQueries = useCapsulesQueryInvalidation();
   const { writeContractAsync } = useWriteContract();
 
   const form = useForm({ resolver: zodResolver(fileFormSchema) });
@@ -41,6 +43,9 @@ export function SubmitPrivateKeyFooter({
             // @ts-expect-error solidity error
             description: error.cause?.reason ?? error.message,
           });
+        },
+        onSuccess() {
+          invalidateCapsulesQueries();
         },
       },
     );

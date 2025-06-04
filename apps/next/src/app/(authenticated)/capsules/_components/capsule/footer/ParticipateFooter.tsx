@@ -2,12 +2,14 @@ import { bytesToHex } from "viem";
 import { useSimulateContract, useWriteContract } from "wagmi";
 
 import { toast } from "@/components/ui/toast";
+import { useCapsulesQueryInvalidation } from "@/hooks/capsuleQuery";
 import { contracts } from "@/lib/blockchain";
 import { Vault } from "@/lib/blockchain/contracts";
 import { EccKey, wrapPem } from "@/lib/crypto";
 import { downloadFileViaBlob } from "@/lib/file";
 
 export function ParticipateFooter({ capsule }: { capsule: Vault.Capsule }) {
+  const invalidateCapsulesQueries = useCapsulesQueryInvalidation();
   const { writeContractAsync } = useWriteContract();
 
   const onParticipate = async () => {
@@ -27,6 +29,9 @@ export function ParticipateFooter({ capsule }: { capsule: Vault.Capsule }) {
             // @ts-expect-error solidity error
             description: error.cause?.reason ?? error.message,
           });
+        },
+        onSuccess() {
+          invalidateCapsulesQueries();
         },
       },
     );

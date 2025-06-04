@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { Form, FormField } from "@/components/ui/form";
 import { toast } from "@/components/ui/toast";
+import { useCapsulesQueryInvalidation } from "@/hooks/capsuleQuery";
 import { contracts } from "@/lib/blockchain";
 import { Vault } from "@/lib/blockchain/contracts";
 import { useAssertedAccount } from "@/lib/blockchain/react";
@@ -15,6 +16,7 @@ import { downloadFileViaBlob } from "@/lib/file";
 const fileFormSchema = z.object({ file: z.instanceof(File) });
 
 export function OpenCapsuleFooter({ capsule }: { capsule: Vault.Capsule }) {
+  const invalidateCapsulesQueries = useCapsulesQueryInvalidation();
   const form = useForm({ resolver: zodResolver(fileFormSchema) });
 
   const { address } = useAssertedAccount();
@@ -63,6 +65,9 @@ export function OpenCapsuleFooter({ capsule }: { capsule: Vault.Capsule }) {
             // @ts-expect-error solidity error
             description: error.cause?.reason ?? error.message,
           });
+        },
+        onSuccess() {
+          invalidateCapsulesQueries();
         },
       },
     );
