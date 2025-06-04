@@ -15,6 +15,5 @@ export function downloadFileViaLink(url: string, filename = "") {
 
 export function downloadFileViaBlob(blob: Blob, filename = "") {
   const objectUrl = URL.createObjectURL(blob);
-  console.log("downloadFileViaBlob", blob.size);
   downloadFileViaLink(objectUrl, filename);
 }

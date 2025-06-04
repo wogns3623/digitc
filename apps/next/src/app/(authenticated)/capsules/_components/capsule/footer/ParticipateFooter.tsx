@@ -23,7 +23,6 @@ export function ParticipateFooter({ capsule }: { capsule: Vault.Capsule }) {
       },
       {
         onError(error) {
-          console.log(error);
           toast({
             title: "타임캡슐에 참여하지 못했습니다",
             // @ts-expect-error solidity error
