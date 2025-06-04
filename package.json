@@ -5,7 +5,9 @@
   "description": "digital time capsule built on blockchain",
   "keywords": [],
   "scripts": {
-    "dev": "turbo dev"
+    "dev": "turbo dev",
+    "contracts:build": "turbo -F @apps/backend build",
+    "contracts:deploy:local": "turbo -F @apps/backend deploy:local"
   },
   "devDependencies": {
     "turbo": "^2.5.3"
