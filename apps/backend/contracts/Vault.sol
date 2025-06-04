@@ -83,9 +83,12 @@ contract Vault {
             );
 
         for (uint i = 0; i < availableCapsuleIds.length; i++) {
-            availableCapsules[i] = capsules[availableCapsuleIds[i]];
-            if (capsuleParticipants[i].has(msg.sender))
-                participants[i] = capsuleParticipants[i].get(msg.sender);
+            Capsule storage capsule = capsules[availableCapsuleIds[i]];
+            availableCapsules[i] = capsule;
+            if (capsuleParticipants[capsule.id].has(msg.sender))
+                participants[i] = capsuleParticipants[capsule.id].get(
+                    msg.sender
+                );
         }
 
         return (availableCapsules, participants);

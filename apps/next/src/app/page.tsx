@@ -149,7 +149,7 @@ function CreateCapsuleForm() {
         },
         onSuccess: () => {
           invalidateCapsulesQueries();
-          form.reset();
+          // form.reset();
         },
       },
     );

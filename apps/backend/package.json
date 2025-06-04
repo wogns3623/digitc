@@ -1,5 +1,5 @@
 {
-  "name": "backend",
+  "name": "@apps/backend",
   "scripts": {
     "test": "hardhat test --network hardhat",
     "coverage": "hardhat coverage --network hardhat",
